@@ -29,11 +29,13 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      if (data.user.role === 'RECRUITER') {
-        window.location.href = '/dashboard';
-      } else {
-        window.location.href = '/jobs';
-      }
+      setTimeout(() => {
+        if (data.user.role === 'RECRUITER') {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/jobs';
+        }
+      }, 100);
     } catch (err: any) {
       setError(err.message);
     } finally {

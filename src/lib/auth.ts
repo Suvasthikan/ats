@@ -11,7 +11,8 @@ export async function getAuthenticatedRecruiter(request: NextRequest) {
     }
 
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
+        const secretStr = process.env.JWT_SECRET || 'default-secret-key';
+        const secret = new TextEncoder().encode(secretStr);
         const { payload } = await jwtVerify(token, secret);
 
         if (!payload || !payload.email || payload.role !== 'RECRUITER') {
@@ -38,7 +39,8 @@ export async function getServerAuth() {
     }
 
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
+        const secretStr = process.env.JWT_SECRET || 'default-secret-key';
+        const secret = new TextEncoder().encode(secretStr);
         const { payload } = await jwtVerify(token, secret);
         return payload;
     } catch (error) {

@@ -6,6 +6,9 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get('token')?.value;
     const path = request.nextUrl.pathname;
 
+    const secretStr = process.env.JWT_SECRET || 'default-secret-key';
+    const secret = new TextEncoder().encode(secretStr);
+
     // Paths that don't require auth
     if (
         path.startsWith('/login') ||
@@ -15,11 +18,13 @@ export async function middleware(request: NextRequest) {
     ) {
         if (token && (path.startsWith('/login') || path.startsWith('/register'))) {
             try {
-                const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
                 const { payload } = await jwtVerify(token, secret);
                 const role = payload.role as string;
-                return NextResponse.redirect(new URL(role === 'RECRUITER' ? '/dashboard' : '/jobs', request.url));
+                const redirectUrl = request.nextUrl.clone();
+                redirectUrl.pathname = role === 'RECRUITER' ? '/dashboard' : '/jobs';
+                return NextResponse.redirect(redirectUrl);
             } catch (err) {
+                console.error('Middleware token verify error (auth-less path):', err);
                 return NextResponse.next();
             }
         }
@@ -27,27 +32,34 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!token) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = '/login';
+        return NextResponse.redirect(loginUrl);
     }
 
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
         const { payload } = await jwtVerify(token, secret);
         const role = payload.role as string;
 
         // Role-based access control
         if (path.startsWith('/dashboard') && role !== 'RECRUITER') {
-            return NextResponse.redirect(new URL('/jobs', request.url));
+            const jobsUrl = request.nextUrl.clone();
+            jobsUrl.pathname = '/jobs';
+            return NextResponse.redirect(jobsUrl);
         }
 
         if (path.startsWith('/jobs') && role === 'RECRUITER' && !path.startsWith('/jobs/')) {
-            // Recruiters see dashboard, not the portal
-            return NextResponse.redirect(new URL('/dashboard', request.url));
+            const dashUrl = request.nextUrl.clone();
+            dashUrl.pathname = '/dashboard';
+            return NextResponse.redirect(dashUrl);
         }
 
         return NextResponse.next();
     } catch (err) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        console.error('Middleware token verify error:', err);
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = '/login';
+        return NextResponse.redirect(loginUrl);
     }
 }
 
