@@ -32,9 +32,9 @@ export default function RegisterPage() {
       }
 
       if (role === 'RECRUITER') {
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       } else {
-        router.push('/jobs');
+        window.location.href = '/jobs';
       }
     } catch (err: any) {
       setError(err.message);

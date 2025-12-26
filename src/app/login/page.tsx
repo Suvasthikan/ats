@@ -30,9 +30,9 @@ export default function LoginPage() {
       }
 
       if (data.user.role === 'RECRUITER') {
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       } else {
-        router.push('/jobs');
+        window.location.href = '/jobs';
       }
     } catch (err: any) {
       setError(err.message);

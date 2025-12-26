@@ -41,14 +41,14 @@ export async function POST(request: Request) {
             .sign(secret);
 
         const response = NextResponse.json(
-            { success: true, user: { id: user.id, name: user.name, email: user.email } },
+            { success: true, user: { id: user.id, name: user.name, email: user.email, role } },
             { status: 201 }
         );
 
         response.cookies.set('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 86400, // 24 hours
             path: '/',
         });
