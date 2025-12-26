@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Recruiter {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+  password String @default("password")
+  jobs  Job[]
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  createdAt    DateTime      @default(now())
+  recruiterId  Int
+  recruiter    Recruiter     @relation(fields: [recruiterId], references: [id])
+  applications Application[]
+}
+
+model Candidate {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String        @default("password")
+  phone        String
+  resume       Bytes?
+  resumeName   String?
+  createdAt    DateTime      @default(now())
+  applications Application[]
+}
+
+model Application {
+  id          Int      @id @default(autoincrement())
+  jobId       Int
+  candidateId Int
+  status      String   @default("APPLIED")
+  aiSummary   String?
+  aiScore     Int?
+  appliedAt   DateTime @default(now())
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  notes       Note[]
+
+  @@unique([jobId, candidateId])
+}
+
+model Note {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  content       String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
