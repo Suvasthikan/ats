@@ -51,14 +51,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   // Fetch only jobs belonging to this recruiter
-  const jobs = await prisma.job.findMany({
+  const jobsRaw = await prisma.job.findMany({
     where: { recruiterId },
     select: { id: true, title: true, description: true, createdAt: true, recruiterId: true },
     orderBy: { createdAt: 'desc' },
   });
 
   // Fetch applications for this recruiter's jobs
-  const applications = await prisma.application.findMany({
+  const applicationsRaw = await prisma.application.findMany({
     where,
     include: {
       job: true,
@@ -80,6 +80,30 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       [sortBy]: 'desc',
     },
   });
+
+  // Serialize everything for safe RCC passing
+  const jobs = jobsRaw.map(job => ({
+    ...job,
+    createdAt: job.createdAt.toISOString()
+  }));
+
+  const applications = applicationsRaw.map(app => ({
+    ...app,
+    appliedAt: app.appliedAt.toISOString(),
+    job: {
+      ...app.job,
+      createdAt: app.job.createdAt.toISOString()
+    },
+    candidate: {
+      ...app.candidate,
+      createdAt: app.candidate.createdAt.toISOString()
+    },
+    notes: app.notes.map(note => ({
+      ...note,
+      createdAt: note.createdAt.toISOString(),
+      updatedAt: note.updatedAt.toISOString()
+    }))
+  }));
 
   // Calculate stats
   const stats = {

@@ -1,19 +1,16 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "./prisma";
-import { jwtVerify } from 'jose';
 
 export async function getAuthenticatedRecruiter(request: NextRequest) {
-    const token = request.cookies.get('token')?.value;
+    const userCookie = request.cookies.get('user')?.value;
 
-    if (!token) {
+    if (!userCookie) {
         return null;
     }
 
     try {
-        const secretStr = process.env.JWT_SECRET || 'default-secret-key';
-        const secret = new TextEncoder().encode(secretStr);
-        const { payload } = await jwtVerify(token, secret);
+        const payload = JSON.parse(decodeURIComponent(userCookie));
 
         if (!payload || !payload.email || payload.role !== 'RECRUITER') {
             return null;
@@ -32,16 +29,14 @@ export async function getAuthenticatedRecruiter(request: NextRequest) {
 
 export async function getServerAuth() {
     const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
+    const userCookie = cookieStore.get('user')?.value;
 
-    if (!token) {
+    if (!userCookie) {
         return null;
     }
 
     try {
-        const secretStr = process.env.JWT_SECRET || 'default-secret-key';
-        const secret = new TextEncoder().encode(secretStr);
-        const { payload } = await jwtVerify(token, secret);
+        const payload = JSON.parse(decodeURIComponent(userCookie));
         return payload;
     } catch (error) {
         return null;

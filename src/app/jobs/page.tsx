@@ -6,9 +6,15 @@ import { Job } from '@/types';
 export const dynamic = 'force-dynamic';
 
 export default async function JobsPage() {
-  const jobs = await prisma.job.findMany({
+  const jobsRaw = await prisma.job.findMany({
     orderBy: { createdAt: 'desc' },
   });
+
+  // Serialize dates for safe RCC passing
+  const jobs = jobsRaw.map(job => ({
+    ...job,
+    createdAt: job.createdAt.toISOString()
+  }));
 
   return (
     <div className="space-y-8">
@@ -23,8 +29,7 @@ export default async function JobsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
         {jobs.length > 0 ? (
-          jobs.map((job: Job) => (
-            // @ts-ignore - Prisma types vs Interface mismatch on dates
+          jobs.map((job: any) => (
             <JobCard key={job.id} job={job} />
           ))
         ) : (

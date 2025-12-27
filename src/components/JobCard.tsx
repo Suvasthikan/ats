@@ -13,7 +13,7 @@ export default function JobCard({ job }: JobCardProps) {
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
             {job.title}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400" suppressHydrationWarning>
             Posted {new Date(job.createdAt).toLocaleDateString()}
           </p>
         </div>

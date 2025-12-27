@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { SignJWT } from 'jose';
 
 export async function POST(request: Request) {
     try {
@@ -33,22 +32,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
         }
 
-        // Create JWT
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
-        const token = await new SignJWT({ id: user.id, email: user.email, role })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setExpirationTime('24h')
-            .sign(secret);
+        const sessionUser = { id: user.id, name: user.name, email: user.email, role };
 
         const response = NextResponse.json(
-            { success: true, user: { id: user.id, name: user.name, email: user.email, role } },
+            { success: true, user: sessionUser },
             { status: 201 }
         );
 
-        response.cookies.set('token', token, {
+        response.cookies.set('user', encodeURIComponent(JSON.stringify(sessionUser)), {
             httpOnly: true,
-            secure: true, // Mandatory for Vercel (HTTPS)
-            sameSite: 'lax', // Better for same-origin production environments
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
             maxAge: 86400, // 24 hours
             path: '/',
         });

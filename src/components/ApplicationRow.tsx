@@ -69,7 +69,7 @@ export default function ApplicationRow({ application }: ApplicationRowProps) {
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="text-sm text-gray-900 dark:text-white">{application.job?.title}</div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500" suppressHydrationWarning>
             {new Date(application.appliedAt).toLocaleDateString()}
           </div>
         </td>
@@ -144,7 +144,7 @@ export default function ApplicationRow({ application }: ApplicationRowProps) {
                 {notes.map((note) => (
                   <div key={note.id} className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-800 dark:text-gray-200">{note.content}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 mt-1" suppressHydrationWarning>
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                   </div>

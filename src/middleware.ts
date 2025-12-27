@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
 
 export async function middleware(request: NextRequest) {
-    const token = request.cookies.get('token')?.value;
+    const userCookie = request.cookies.get('user')?.value;
     const path = request.nextUrl.pathname;
 
-    const secretStr = process.env.JWT_SECRET || 'default-secret-key';
-    const secret = new TextEncoder().encode(secretStr);
+    let user: any = null;
+    if (userCookie) {
+        try {
+            user = JSON.parse(decodeURIComponent(userCookie));
+        } catch (err) {
+            console.error('Middleware cookie parse error:', err);
+        }
+    }
 
     // Paths that don't require auth
     if (
@@ -16,51 +21,34 @@ export async function middleware(request: NextRequest) {
         path.startsWith('/api/auth') ||
         path === '/'
     ) {
-        if (token && (path.startsWith('/login') || path.startsWith('/register'))) {
-            try {
-                const { payload } = await jwtVerify(token, secret);
-                const role = payload.role as string;
-                const redirectUrl = request.nextUrl.clone();
-                redirectUrl.pathname = role === 'RECRUITER' ? '/dashboard' : '/jobs';
-                return NextResponse.redirect(redirectUrl);
-            } catch (err) {
-                console.error('Middleware token verify error (auth-less path):', err);
-                return NextResponse.next();
-            }
+        if (user && (path.startsWith('/login') || path.startsWith('/register'))) {
+            const redirectUrl = request.nextUrl.clone();
+            redirectUrl.pathname = user.role === 'RECRUITER' ? '/dashboard' : '/jobs';
+            return NextResponse.redirect(redirectUrl);
         }
         return NextResponse.next();
     }
 
-    if (!token) {
+    if (!user) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = '/login';
         return NextResponse.redirect(loginUrl);
     }
 
-    try {
-        const { payload } = await jwtVerify(token, secret);
-        const role = payload.role as string;
-
-        // Role-based access control
-        if (path.startsWith('/dashboard') && role !== 'RECRUITER') {
-            const jobsUrl = request.nextUrl.clone();
-            jobsUrl.pathname = '/jobs';
-            return NextResponse.redirect(jobsUrl);
-        }
-
-        if (path.startsWith('/jobs') && role === 'RECRUITER' && !path.startsWith('/jobs/')) {
-            const dashUrl = request.nextUrl.clone();
-            dashUrl.pathname = '/dashboard';
-            return NextResponse.redirect(dashUrl);
-        }
-
-        return NextResponse.next();
-    } catch (err) {
-        console.error('Middleware token verify error:', err);
-        const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = '/login';
-        return NextResponse.redirect(loginUrl);
+    // Role-based access control
+    if (path.startsWith('/dashboard') && user.role !== 'RECRUITER') {
+        const jobsUrl = request.nextUrl.clone();
+        jobsUrl.pathname = '/jobs';
+        return NextResponse.redirect(jobsUrl);
     }
+
+    if (path.startsWith('/jobs') && user.role === 'RECRUITER' && !path.startsWith('/jobs/')) {
+        const dashUrl = request.nextUrl.clone();
+        dashUrl.pathname = '/dashboard';
+        return NextResponse.redirect(dashUrl);
+    }
+
+    return NextResponse.next();
 }
 
 export const config = {
