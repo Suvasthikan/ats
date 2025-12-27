@@ -1,19 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-interface PostJobModalProps {
+interface JobModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
+  job?: any; // If provided, we are in Edit mode
 }
 
-export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
+export default function JobModal({ isOpen, onClose, onSuccess, job }: JobModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
+
+  useEffect(() => {
+    if (job) {
+      setTitle(job.title || '');
+      setDescription(job.description || '');
+    } else {
+      setTitle('');
+      setDescription('');
+    }
+  }, [job, isOpen]);
 
   if (!isOpen) return null;
 
@@ -23,8 +33,11 @@ export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
     setError('');
 
     try {
-      const res = await fetch('/api/jobs', {
-        method: 'POST',
+      const url = job ? `/api/jobs/${job.id}` : '/api/jobs';
+      const method = job ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description }),
       });
@@ -32,13 +45,12 @@ export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to post job');
+        throw new Error(data.error || `Failed to ${job ? 'update' : 'post'} job`);
       }
 
       setTitle('');
       setDescription('');
-      onClose();
-      router.refresh();
+      onSuccess(); // Let the parent handle closing and notifications
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -48,9 +60,11 @@ export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in duration-200">
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Post a New Job</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            {job ? 'Edit Job Posting' : 'Post a New Job'}
+          </h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -100,10 +114,10 @@ export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
                 disabled={loading}
               >
-                {loading ? 'Posting...' : 'Post Job'}
+                {loading ? (job ? 'Updating...' : 'Posting...') : (job ? 'Update Job' : 'Post Job')}
               </button>
             </div>
           </form>
@@ -112,3 +126,4 @@ export default function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
     </div>
   );
 }
+
