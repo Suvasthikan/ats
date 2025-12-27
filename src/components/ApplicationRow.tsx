@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { ApplicationWithDetails, ApplicationStatus, APPLICATION_STATUSES } from '@/types';
 import StatusBadge from './StatusBadge';
 
@@ -8,14 +8,14 @@ interface ApplicationRowProps {
   application: ApplicationWithDetails;
 }
 
-export default function ApplicationRow({ application }: ApplicationRowProps) {
+export default memo(function ApplicationRow({ application }: ApplicationRowProps) {
   const [status, setStatus] = useState<ApplicationStatus>(application.status as ApplicationStatus);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notes, setNotes] = useState(application.notes || []);
   const [newNote, setNewNote] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusChange = async (newStatus: ApplicationStatus) => {
+  const handleStatusChange = useCallback(async (newStatus: ApplicationStatus) => {
     setIsUpdating(true);
     try {
       const res = await fetch(`/api/applications/${application.id}`, {
@@ -30,9 +30,9 @@ export default function ApplicationRow({ application }: ApplicationRowProps) {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [application.id]);
 
-  const handleAddNote = async (e: React.FormEvent) => {
+  const handleAddNote = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNote.trim()) return;
 
@@ -44,13 +44,13 @@ export default function ApplicationRow({ application }: ApplicationRowProps) {
       });
       const data = await res.json();
       if (data.success) {
-        setNotes([data.data, ...notes]);
+        setNotes((prev) => [data.data, ...prev]);
         setNewNote('');
       }
     } catch (error) {
       alert('Error adding note');
     }
-  };
+  }, [application.id, newNote]);
 
   return (
     <>
@@ -159,4 +159,4 @@ export default function ApplicationRow({ application }: ApplicationRowProps) {
       )}
     </>
   );
-}
+});

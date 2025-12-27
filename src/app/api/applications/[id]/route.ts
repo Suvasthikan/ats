@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { ApiResponse, Application, ApplicationStatus, APPLICATION_STATUSES } from "@/types";
 
@@ -103,6 +104,7 @@ export async function PUT(
             },
         });
 
+        revalidatePath('/dashboard');
         return NextResponse.json({ success: true, data: application });
     } catch (error) {
         console.error("Error updating application:", error);

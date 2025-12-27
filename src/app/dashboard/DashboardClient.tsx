@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardFilters from "@/components/DashboardFilters";
 import ApplicationList from "@/components/ApplicationList";
@@ -18,23 +18,29 @@ export default function DashboardClient({ jobs, applications, stats, recruiterNa
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Group applications by jobId
-  const applicationsByJob = jobs.reduce((acc: any, job: any) => {
-    acc[job.id] = applications.filter((app: any) => app.jobId === job.id);
-    return acc;
-  }, {});
+  const applicationsByJob = useMemo(() => {
+    return jobs.reduce((acc: any, job: any) => {
+      acc[job.id] = applications.filter((app: any) => app.jobId === job.id);
+      return acc;
+    }, {});
+  }, [jobs, applications]);
 
-  const handleEditJob = (job: any) => {
+  const handleCloseJobModal = useCallback(() => {
+    setIsJobModalOpen(false);
+  }, []);
+
+  const handleEditJob = useCallback((job: any) => {
     setEditingJob(job);
     setIsJobModalOpen(true);
-  };
+  }, []);
 
-  const handleJobModalSuccess = () => {
+  const handleJobModalSuccess = useCallback(() => {
     setIsJobModalOpen(false);
     setSuccessMessage(editingJob ? 'Job updated successfully!' : 'Job posted successfully!');
     router.refresh();
-  };
+  }, [editingJob, router]);
 
-  const handleDeleteJob = async () => {
+  const handleDeleteJob = useCallback(async () => {
     if (!deletingJob) return;
     setIsDeleting(true);
     try {
@@ -51,7 +57,7 @@ export default function DashboardClient({ jobs, applications, stats, recruiterNa
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [deletingJob, router]);
 
   return (
     <div className="space-y-6">
@@ -128,8 +134,9 @@ export default function DashboardClient({ jobs, applications, stats, recruiterNa
       </div>
 
       <JobModal 
+        key={editingJob?.id || 'new'}
         isOpen={isJobModalOpen} 
-        onClose={() => setIsJobModalOpen(false)} 
+        onClose={handleCloseJobModal} 
         onSuccess={handleJobModalSuccess}
         job={editingJob}
       />

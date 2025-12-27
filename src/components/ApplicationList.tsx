@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ApplicationWithDetails } from "@/types";
 import ApplicationRow from "./ApplicationRow";
 
@@ -5,7 +6,7 @@ interface ApplicationListProps {
   applications: ApplicationWithDetails[];
 }
 
-export default function ApplicationList({ applications }: ApplicationListProps) {
+export default memo(function ApplicationList({ applications }: ApplicationListProps) {
   if (applications.length === 0) {
     return (
       <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -46,4 +47,4 @@ export default function ApplicationList({ applications }: ApplicationListProps) 
       </div>
     </div>
   );
-}
+});

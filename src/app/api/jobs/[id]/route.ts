@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { ApiResponse, Job } from "@/types";
 import { getAuthenticatedRecruiter } from "@/lib/auth";
@@ -92,6 +93,9 @@ export async function PUT(
             },
         });
 
+        revalidatePath('/dashboard');
+        revalidatePath('/jobs');
+
         const response: ApiResponse<Job> = {
             success: true,
             data: job,
@@ -148,6 +152,9 @@ export async function DELETE(
         await prisma.job.delete({
             where: { id: jobId },
         });
+
+        revalidatePath('/dashboard');
+        revalidatePath('/jobs');
 
         return NextResponse.json({ success: true, data: null });
     } catch (error) {

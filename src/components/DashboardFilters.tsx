@@ -1,13 +1,14 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { APPLICATION_STATUSES, Job } from '@/types';
 
 interface DashboardFiltersProps {
   jobs: Job[];
 }
 
-export default function DashboardFilters({ jobs }: DashboardFiltersProps) {
+export default memo(function DashboardFilters({ jobs }: DashboardFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -16,7 +17,9 @@ export default function DashboardFilters({ jobs }: DashboardFiltersProps) {
   const currentSearch = searchParams.get('search') || '';
   const currentSort = searchParams.get('sortBy') || 'appliedAt';
 
-  const handleFilterChange = (key: string, value: string) => {
+  const [searchTerm, setSearchTerm] = useState(currentSearch);
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     if (value && value !== 'ALL') {
       params.set(key, value);
@@ -24,7 +27,18 @@ export default function DashboardFilters({ jobs }: DashboardFiltersProps) {
       params.delete(key);
     }
     router.push(`/dashboard?${params.toString()}`);
-  };
+  }, [router, searchParams]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== currentSearch) {
+        handleFilterChange('search', searchTerm);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentSearch, handleFilterChange]);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
@@ -33,8 +47,8 @@ export default function DashboardFilters({ jobs }: DashboardFiltersProps) {
           type="text"
           placeholder="Search candidates..."
           className="input"
-          defaultValue={currentSearch}
-          onChange={(e) => handleFilterChange('search', e.target.value)}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
       
@@ -76,4 +90,4 @@ export default function DashboardFilters({ jobs }: DashboardFiltersProps) {
       </div>
     </div>
   );
-}
+});

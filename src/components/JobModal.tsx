@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 
 interface JobModalProps {
   isOpen: boolean;
@@ -9,54 +9,67 @@ interface JobModalProps {
   job?: any; // If provided, we are in Edit mode
 }
 
-export default function JobModal({ isOpen, onClose, onSuccess, job }: JobModalProps) {
+export default memo(function JobModal({ isOpen, onClose, onSuccess, job }: JobModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Initialize form state when the modal opens or the job changes
   useEffect(() => {
-    if (job) {
-      setTitle(job.title || '');
-      setDescription(job.description || '');
-    } else {
-      setTitle('');
-      setDescription('');
+    if (isOpen) {
+      if (job) {
+        setTitle(job.title || '');
+        setDescription(job.description || '');
+      } else {
+        setTitle('');
+        setDescription('');
+      }
+      setError('');
     }
   }, [job, isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!title.trim() || !description.trim()) {
+      setError('Title and description are required.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const url = job ? `/api/jobs/${job.id}` : '/api/jobs';
-      const method = job ? 'PUT' : 'POST';
+      const url = job?.id ? `/api/jobs/${job.id}` : '/api/jobs';
+      const method = job?.id ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ 
+          title: title.trim(), 
+          description: description.trim() 
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || `Failed to ${job ? 'update' : 'post'} job`);
+        console.error('Job submission failed:', data);
+        throw new Error(data.error || `Failed to ${job?.id ? 'update' : 'post'} job`);
       }
 
-      setTitle('');
-      setDescription('');
-      onSuccess(); // Let the parent handle closing and notifications
+      onSuccess();
     } catch (err: any) {
-      setError(err.message);
+      console.error('JobModal Error:', err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [job?.id, title, description, onSuccess]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -125,5 +138,5 @@ export default function JobModal({ isOpen, onClose, onSuccess, job }: JobModalPr
       </div>
     </div>
   );
-}
+});
 
