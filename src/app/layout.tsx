@@ -5,7 +5,7 @@ import { getServerAuth } from "@/lib/auth";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "ATS - Applicant Tracking System",
+  title: "ATS Demo - Applicant Tracking System",
   description: "A modern applicant tracking system for recruiters and candidates",
 };
 
@@ -26,7 +26,7 @@ export default async function RootLayout({
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <Link href="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  ATS
+                  ATS Demo
                 </Link>
               </div>
               <div className="flex items-center space-x-4">
