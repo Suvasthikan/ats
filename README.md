@@ -75,3 +75,6 @@ For this take-home demo, we have implemented stricter access rules than a typica
     - In a real app, this would be replaced by `session.user.email`.
     - **How to Test**: Use Postman or curl with `X-Recruiter-Email: alice@company.com`.
 - **Database Reset**: The migration `init_recruiter` introduces a mandatory relationship. The provided seed script populates necessary test data.
+
+
+
